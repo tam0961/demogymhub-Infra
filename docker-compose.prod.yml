@@ -53,6 +53,7 @@ services:
 
   minio:
     image: minio/minio:latest
+    profiles: ["storage"]
     restart: always
     command: server /data --console-address ":9001"
     environment:

@@ -1,0 +1,47 @@
+# Use only with Cloudflare SSL mode "Full (strict)".
+# 1. Cloudflare dashboard -> SSL/TLS -> Origin Server -> Create Certificate.
+# 2. Save as nginx/certs/origin.pem and nginx/certs/origin.key on the VPS (never commit; keep in .gitignore).
+# 3. Copy this file to nginx/origin-ssl.conf, set server_name, then in compose mount it into
+#    /etc/nginx/conf.d/ and ./nginx/certs into /etc/nginx/certs:ro, and publish port 443.
+# 4. In default.conf remove the "listen 80" server body duplication by keeping only this 443 server
+#    and a port-80 server that redirects (or leave 80 for Cloudflare Flexible fallback).
+
+server {
+  listen 443 ssl;
+  http2 on;
+  server_name dev.example.com;
+
+  ssl_certificate     /etc/nginx/certs/origin.pem;
+  ssl_certificate_key /etc/nginx/certs/origin.key;
+  ssl_protocols       TLSv1.2 TLSv1.3;
+  ssl_session_cache   shared:SSL:10m;
+  ssl_session_timeout 1d;
+
+  root /usr/share/nginx/html;
+  index index.html;
+  server_tokens off;
+
+  add_header Strict-Transport-Security "max-age=31536000" always;
+  add_header X-Content-Type-Options nosniff always;
+  add_header X-Frame-Options DENY always;
+  add_header Referrer-Policy no-referrer always;
+
+  location /api/auth/ {
+    limit_req zone=auth_zone burst=20 nodelay;
+    include /etc/nginx/conf.d/proxy-api.inc;
+  }
+
+  location /api/ {
+    include /etc/nginx/conf.d/proxy-api.inc;
+  }
+
+  location /assets/ {
+    expires 1y;
+    try_files $uri =404;
+  }
+
+  location / {
+    expires -1;
+    try_files $uri $uri/ /index.html;
+  }
+}

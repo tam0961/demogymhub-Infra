@@ -6,7 +6,7 @@ add_header Strict-Transport-Security $hsts always;
 add_header X-Content-Type-Options nosniff always;
 add_header X-Frame-Options DENY always;
 add_header Referrer-Policy no-referrer always;
-add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+add_header Permissions-Policy "camera=(self), microphone=(), geolocation=()" always;
 add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://img.vietqr.io; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
 
 location = /nginx-health {

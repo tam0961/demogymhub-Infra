@@ -16,7 +16,7 @@ dev: check-env web
 
 prod: check-env web
 	$(PROD) pull --ignore-buildable || true
-	$(PROD) build api
+	$(PROD) build migrate
 	$(PROD) run --rm migrate
 	$(PROD) up -d
 	@$(PROD) exec -T api sh -c 'test "$$APP_ENV" = production' || (echo "APP_ENV is not production" && exit 1)

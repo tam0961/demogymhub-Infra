@@ -290,7 +290,9 @@ function startPoll(dev) {
 if (process.argv[2] === 'test') test();
 else if (process.argv[2] === 'pull') (async () => { for (const d of cfg.devices) { try { await pull(d); } catch (e) { log(`${d.name}: ${e.message}`); } } })();
 else {
-  log('Cau noi chay (chi doc). Thoat bang Ctrl+C.');
-  cfg.devices.forEach(startPoll);
-  cfg.devices.forEach(startJobs);
+  const mode = process.argv[2] || 'all';
+  log(`Cau noi chay, che do: ${mode}. Thoat bang Ctrl+C.`);
+  if (mode === 'all' || mode === 'scan') cfg.devices.forEach(startPoll);
+  if (mode === 'all' || mode === 'jobs') cfg.devices.forEach(startJobs);
+  if (mode === 'all' || mode === 'jobs' || mode === 'live') require('./live').startLive(cfg, log);
 }

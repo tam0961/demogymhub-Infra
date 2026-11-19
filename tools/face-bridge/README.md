@@ -15,3 +15,12 @@ Chay tren may tinh luon bat o quay, cung mang voi may cham cong. Doc luot quet. 
 
 ## Keo anh khuon mat tu may ve DemoGym (chi sao chep)
 Bam `keo-anh.bat` (hoac `node bridge.js pull`). Chi DOC tu may. DemoGym chi them anh cho hoi vien KHONG co anh, khong ghi de anh co san, khong sua thong tin hoi vien. Ket qua: saved (da them), has_photo (da co anh, bo qua), no_match (ma khong khop hoi vien), other_branch, no_photo, bad_image.
+
+## Chay thanh 2 tien trinh rieng (khuyen dung)
+- `chay-quet.bat`: chi nhan luot quet cua khach, popup luon nhanh.
+- `chay-dang-ky.bat`: chi nhan viec dang ky khuon mat tu DemoGym va ghi len may. Viec nay hoi DemoGym, chi goi may khi co viec.
+- `chay-cau-noi.bat` van chay ca hai trong mot tien trinh.
+Dang ky hoac keo anh (`keo-anh.bat`) lau hoac loi cung khong lam cham phan quet.
+
+## Xem truc tiep camera may cham cong (de chup anh khuon mat)
+Chay trong `chay-dang-ky.bat` (hoac `chay-cau-noi.bat`), mo cong 8898 chi tren may tinh nay (127.0.0.1). Trinh duyet phai mo tren CHINH may tinh dang chay cau noi, dung Chrome hoac Edge, va trang phai la HTTPS hoac http://localhost (WebCodecs chi chay o ngu canh an toan). `allowOrigins` trong config liet ke them dia chi trang duoc phep ket noi (mac dinh chi dia chi `server`). Camera chi de XEM cho dung khung, khong luu hinh.

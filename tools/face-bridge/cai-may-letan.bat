@@ -19,6 +19,6 @@ echo Xong. Tu lan mo may sau, cau noi tu chay. Bay gio chay thu:
 start "" "%~dp0chay-quet.bat"
 start "" "%~dp0chay-dang-ky.bat"
 timeout /t 5 >nul
-start "" http://localhost:8080
-echo Neu trinh duyet hien trang DemoGym la thanh cong. Dung Chrome hoac Edge.
+node mo-trang.js
+echo Neu trinh duyet hien trang DemoGym la thanh cong. Dung Chrome hoac Edge, mo bang ten mien (HTTPS), khong dung dia chi IP.
 pause

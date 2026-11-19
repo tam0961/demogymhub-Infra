@@ -1,7 +1,17 @@
 {
-  "server": "http://103.82.135.109",
-  "allowOrigins": ["http://localhost:8080"],
+  "server": "https://dev.thgymhub.online",
+  "allowOrigins": [
+    "https://dev.thgymhub.online",
+    "https://thgymhub.online"
+  ],
   "devices": [
-    { "name": "Q7", "ip": "192.168.1.100", "user": "tai-khoan-chi-xem", "pass": "", "key": "khoa-tao-o-Thiet-lap-Thiet-bi", "intervalSec": 2 }
+    {
+      "name": "Q7",
+      "ip": "192.168.1.100",
+      "user": "tai-khoan-chi-xem",
+      "pass": "",
+      "key": "khoa-tao-o-Thiet-lap-Thiet-bi",
+      "intervalSec": 2
+    }
   ]
 }

@@ -28,7 +28,7 @@ Chay trong `chay-dang-ky.bat` (hoac `chay-cau-noi.bat`), mo cong 8898 chi tren m
 ## May tinh le tan (cai mot lan)
 1. Cai Node.js LTS (nodejs.org).
 2. Chep ca thu muc `face-bridge` (da co `config.json`) sang may le tan, vi du `C:\face-bridge`. `config.json` chua mat khau may cham cong: chep bang USB hoac thu muc noi bo, khong gui qua chat/email.
-3. Bam doi `cai-may-letan.bat`: tao 2 loi tat o thu muc Startup (tu chay khi mo may) va chay thu.
-4. Dung Chrome hoac Edge, mo **http://localhost:8080** (cau noi chuyen tiep sang DemoGym). Dung dia chi nay thay cho dia chi IP de xem duoc camera.
-5. Neu may admin cung dang chay cau noi, TAT cau noi o may admin (dong cua so `chay-quet`, `chay-dang-ky`) de hai may khong cung hoi may cham cong.
-Cong web cuc bo chi nghe 127.0.0.1. Khi DemoGym co HTTPS (Prod), mo thang dia chi HTTPS, khong can cong nay.
+3. Bam doi `cai-may-letan.bat`: tao 2 loi tat o thu muc Startup (tu chay khi mo may), chay thu va mo trang DemoGym.
+4. Le tan dung Chrome hoac Edge, mo DemoGym bang **ten mien HTTPS** (Dev: https://dev.thgymhub.online, Prod: https://thgymhub.online), khong dung dia chi IP. Xem camera may cham cong can trang HTTPS va cau noi dang chay tren CHINH may nay. Neu trinh duyet hoi quyen truy cap thiet bi trong mang noi bo, chon Cho phep.
+5. Neu may khac cung dang chay cau noi, TAT cau noi o do (chi mot may hoi may cham cong).
+Khi chuyen sang Prod: doi `server` trong config.json thanh https://thgymhub.online, tao thiet bi o Prod va dung khoa cua thiet bi do.

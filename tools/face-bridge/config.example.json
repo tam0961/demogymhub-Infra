@@ -1,6 +1,6 @@
 {
   "server": "http://103.82.135.109",
   "devices": [
-    { "name": "Q7", "ip": "192.168.1.100", "user": "tai-khoan-chi-xem", "pass": "", "key": "khoa-tao-o-Thiet-lap-Thiet-bi", "intervalSec": 3 }
+    { "name": "Q7", "ip": "192.168.1.100", "user": "tai-khoan-chi-xem", "pass": "", "key": "khoa-tao-o-Thiet-lap-Thiet-bi", "intervalSec": 2 }
   ]
 }

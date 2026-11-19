@@ -4,7 +4,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
+const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8').replace(/^﻿/, ''));
 const noAccent = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^A-Za-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
 const md5 = (s) => crypto.createHash('md5').update(s).digest('hex');
 const log = (...a) => console.log(new Date().toLocaleTimeString('vi-VN'), ...a);
@@ -15,50 +15,64 @@ function parseChallenge(h) {
   return o;
 }
 
-async function hik(dev, method, uri, body, raw) {
+const authCache = {};
+
+function digestFor(dev, method, uri) {
+  const c = authCache[dev.ip];
+  c.nc += 1;
+  const nc = String(c.nc).padStart(8, '0');
+  const cnonce = crypto.randomBytes(8).toString('hex');
+  const ha1 = md5(`${dev.user}:${c.realm}:${dev.pass}`);
+  const ha2 = md5(`${method}:${uri}`);
+  const resp = c.qop ? md5(`${ha1}:${c.nonce}:${nc}:${cnonce}:auth:${ha2}`) : md5(`${ha1}:${c.nonce}:${ha2}`);
+  return `Digest username="${dev.user}", realm="${c.realm}", nonce="${c.nonce}", uri="${uri}", response="${resp}"${c.qop ? `, qop=auth, nc=${nc}, cnonce="${cnonce}"` : ''}${c.opaque ? `, opaque="${c.opaque}"` : ''}`;
+}
+
+async function hik(dev, method, uri, body, raw, timeoutMs) {
   const url = `http://${dev.ip}${uri}`;
   const form = typeof body === 'function';
   const init = (auth) => ({
     method,
     headers: { ...(body && !form ? { 'Content-Type': 'application/json' } : {}), ...(auth ? { Authorization: auth } : {}) },
     body: form ? body() : body ? JSON.stringify(body) : undefined,
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(timeoutMs || 15000),
   });
-  let r = await fetch(url, init());
+  let r = await fetch(url, init(authCache[dev.ip] ? digestFor(dev, method, uri) : null));
   if (r.status === 401) {
-    const c = parseChallenge(r.headers.get('www-authenticate'));
-    const cnonce = crypto.randomBytes(8).toString('hex');
-    const nc = '00000001';
-    const ha1 = md5(`${dev.user}:${c.realm}:${dev.pass}`);
-    const ha2 = md5(`${method}:${uri}`);
-    const resp = c.qop ? md5(`${ha1}:${c.nonce}:${nc}:${cnonce}:auth:${ha2}`) : md5(`${ha1}:${c.nonce}:${ha2}`);
-    const auth = `Digest username="${dev.user}", realm="${c.realm}", nonce="${c.nonce}", uri="${uri}", response="${resp}"${c.qop ? `, qop=auth, nc=${nc}, cnonce="${cnonce}"` : ''}${c.opaque ? `, opaque="${c.opaque}"` : ''}`;
-    r = await fetch(url, init(auth));
+    delete authCache[dev.ip];
+    r = await fetch(url, init());
+    if (r.status === 401) {
+      const c = parseChallenge(r.headers.get('www-authenticate'));
+      authCache[dev.ip] = { realm: c.realm, nonce: c.nonce, qop: c.qop, opaque: c.opaque, nc: 0 };
+      r = await fetch(url, init(digestFor(dev, method, uri)));
+      if (r.status === 401) {
+        delete authCache[dev.ip];
+        throw Object.assign(new Error('Sai tai khoan hoac mat khau may cham cong'), { auth: true });
+      }
+    }
   }
   if (raw) {
     if (!r.ok) throw new Error(`May tra ve ${r.status}`);
     return Buffer.from(await r.arrayBuffer());
   }
   const text = await r.text();
-  if (r.status === 401) throw Object.assign(new Error('Sai tai khoan hoac mat khau may cham cong'), { auth: true });
   if (!r.ok) throw new Error(`May tra ve ${r.status}: ${text.slice(0, 160)}`);
   return text;
 }
 
 async function deviceNow(dev) {
-  const t = await hik(dev, 'GET', '/ISAPI/System/time');
+  const t = await hik(dev, 'GET', '/ISAPI/System/time', null, false, 5000);
   const lt = /<localTime>([^<]+)</.exec(t)?.[1];
   const m = /^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)([+-]\d\d:\d\d)?/.exec(lt || '');
   if (!m) throw new Error('Khong doc duoc gio may');
-  const off = m[2] || '+07:00';
-  return { wall: Date.parse(m[1] + 'Z'), off };
+  return { wall: Date.parse(m[1] + 'Z'), off: m[2] || '+07:00' };
 }
 
 const fmtWall = (ms, off) => new Date(ms).toISOString().slice(0, 19) + off;
 
 async function fetchEvents(dev, start, end) {
   const cond = { searchID: String(Date.now()), searchResultPosition: 0, maxResults: 30, major: 5, minor: 0, startTime: start, endTime: end };
-  const t = await hik(dev, 'POST', '/ISAPI/AccessControl/AcsEvent?format=json', { AcsEventCond: cond });
+  const t = await hik(dev, 'POST', '/ISAPI/AccessControl/AcsEvent?format=json', { AcsEventCond: cond }, false, 5000);
   const j = JSON.parse(t);
   return (j.AcsEvent && j.AcsEvent.InfoList) || [];
 }
@@ -207,17 +221,31 @@ async function test() {
 
 function startPoll(dev) {
   const seen = new Set();
-  const every = Math.max(Number(dev.intervalSec) || 3, 3) * 1000;
-  let start = null;
+  const every = Math.max(Number(dev.intervalSec) || 2, 2) * 1000;
+  let skew = null;
+  let skewAt = 0;
+  let off = '+07:00';
+  let startWall = null;
+  let busy = false;
   let pausedUntil = 0;
   const tick = async () => {
-    if (Date.now() < pausedUntil) return;
+    if (busy || Date.now() < pausedUntil) return;
+    busy = true;
     try {
-      const dn = await deviceNow(dev);
-      if (start === null) start = fmtWall(dn.wall - 5000, dn.off);
-      const events = (await fetchEvents(dev, start, fmtWall(dn.wall + 3600000, dn.off))).filter((e) => e.employeeNoString);
-      for (const e of events.sort((a, b) => String(a.time).localeCompare(String(b.time)))) {
+      if (skew === null || Date.now() - skewAt > 5 * 60 * 1000) {
+        const dn = await deviceNow(dev);
+        skew = dn.wall - Date.now();
+        skewAt = Date.now();
+        off = dn.off;
+      }
+      const wallNow = Date.now() + skew;
+      if (startWall === null) startWall = wallNow - 3000;
+      const events = (await fetchEvents(dev, fmtWall(startWall, off), fmtWall(wallNow + 3600000, off))).filter((e) => e.employeeNoString);
+      events.sort((a, b) => String(a.time).localeCompare(String(b.time)));
+      for (const e of events) {
         const id = `${e.employeeNoString}|${e.time}|${e.serialNo || ''}`;
+        const t = Date.parse(String(e.time).slice(0, 19) + 'Z');
+        if (!Number.isNaN(t) && t - 2000 > startWall) startWall = t - 2000;
         if (seen.has(id)) continue;
         seen.add(id);
         if (seen.size > 500) seen.delete(seen.values().next().value);
@@ -230,6 +258,8 @@ function startPoll(dev) {
         pausedUntil = Date.now() + 10 * 60 * 1000;
         log(`${dev.name}: tam dung 10 phut de tranh khoa tai khoan may. Sua mat khau trong config.json roi chay lai.`);
       }
+    } finally {
+      busy = false;
     }
   };
   tick();

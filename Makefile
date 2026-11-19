@@ -2,7 +2,7 @@ DEV  = docker compose -f docker-compose.dev.yml --env-file .env
 PROD = docker compose -f docker-compose.prod.yml --env-file .env
 WEB_PORT ?= 3002
 
-.PHONY: web dev prod health down-dev down-prod logs-dev logs-prod check-env
+.PHONY: backup backup-dev web dev prod health down-dev down-prod logs-dev logs-prod check-env
 
 check-env:
 	@test -f .env || (echo ".env missing: cp .env.example .env" && exit 1)
@@ -35,3 +35,9 @@ logs-dev:
 
 logs-prod:
 	$(PROD) logs -f --tail=100 api
+
+backup: check-env
+	@bash scripts/backup.sh
+
+backup-dev: check-env
+	@COMPOSE_FILE=docker-compose.dev.yml bash scripts/backup.sh

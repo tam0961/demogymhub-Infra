@@ -12,3 +12,6 @@ Chay tren may tinh luon bat o quay, cung mang voi may cham cong. Doc luot quet. 
 - Khong dua `config.json` vao git (da nam trong .gitignore).
 - Ma nguoi tren may phai la Face ID, ma hoi vien (vi du HV0389) hoac so dien thoai trong DemoGym; nhan vien thi gan "Ma cham cong" o Nhan su > Nhan vien.
 - Khach quet: popup hien tren man hinh le tan (anh, goi, han, cong no) va le tan bam Check-in.
+
+## Keo anh khuon mat tu may ve DemoGym (chi sao chep)
+Bam `keo-anh.bat` (hoac `node bridge.js pull`). Chi DOC tu may. DemoGym chi them anh cho hoi vien KHONG co anh, khong ghi de anh co san, khong sua thong tin hoi vien. Ket qua: saved (da them), has_photo (da co anh, bo qua), no_match (ma khong khop hoi vien), other_branch, no_photo, bad_image.

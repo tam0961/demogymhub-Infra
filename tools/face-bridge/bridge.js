@@ -15,7 +15,7 @@ function parseChallenge(h) {
   return o;
 }
 
-async function hik(dev, method, uri, body) {
+async function hik(dev, method, uri, body, raw) {
   const url = `http://${dev.ip}${uri}`;
   const form = typeof body === 'function';
   const init = (auth) => ({
@@ -34,6 +34,10 @@ async function hik(dev, method, uri, body) {
     const resp = c.qop ? md5(`${ha1}:${c.nonce}:${nc}:${cnonce}:auth:${ha2}`) : md5(`${ha1}:${c.nonce}:${ha2}`);
     const auth = `Digest username="${dev.user}", realm="${c.realm}", nonce="${c.nonce}", uri="${uri}", response="${resp}"${c.qop ? `, qop=auth, nc=${nc}, cnonce="${cnonce}"` : ''}${c.opaque ? `, opaque="${c.opaque}"` : ''}`;
     r = await fetch(url, init(auth));
+  }
+  if (raw) {
+    if (!r.ok) throw new Error(`May tra ve ${r.status}`);
+    return Buffer.from(await r.arrayBuffer());
   }
   const text = await r.text();
   if (r.status === 401) throw Object.assign(new Error('Sai tai khoan hoac mat khau may cham cong'), { auth: true });
@@ -132,6 +136,62 @@ function startJobs(dev) {
   }, 6000);
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Chi DOC tu may: danh sach nguoi + anh mat, gui sang DemoGym de SAO CHEP anh cho hoi vien chua co anh. Khong ghi gi len may.
+async function pull(dev) {
+  const names = {};
+  let pos = 0;
+  for (;;) {
+    const t = await hik(dev, 'POST', '/ISAPI/AccessControl/UserInfo/Search?format=json', { UserInfoSearchCond: { searchID: 'pl' + Date.now(), searchResultPosition: pos, maxResults: 30 } });
+    const u = JSON.parse(t).UserInfoSearch || {};
+    const l = u.UserInfo || [];
+    l.forEach((x) => { if (x.employeeNo) names[String(x.employeeNo)] = x.name || ''; });
+    pos += l.length;
+    if (!l.length || pos >= (u.totalMatches || pos) || pos > 20000) break;
+    await sleep(300);
+  }
+  const faces = {};
+  pos = 0;
+  for (;;) {
+    const t = await hik(dev, 'POST', '/ISAPI/Intelligent/FDLib/FDSearch?format=json', { searchResultPosition: pos, maxResults: 30, faceLibType: 'blackFD', FDID: '1' });
+    const j = JSON.parse(t);
+    const l = j.MatchList || [];
+    l.forEach((x) => { if (x.FPID) faces[String(x.FPID)] = x.faceURL || ''; });
+    pos += l.length;
+    if (!l.length || pos >= (j.totalMatches || 0) || pos > 20000) break;
+    await sleep(300);
+  }
+  const ids = [...new Set([...Object.keys(names), ...Object.keys(faces)])];
+  log(`${dev.name}: may co ${Object.keys(names).length} nguoi, ${Object.keys(faces).length} anh mat`);
+  const stat = {};
+  for (const emp of ids) {
+    let photo;
+    let result;
+    if (faces[emp]) {
+      try {
+        const u = new URL(faces[emp], 'http://' + dev.ip);
+        const buf = await hik(dev, 'GET', u.pathname + u.search, null, true);
+        if (buf.length && buf.length <= 200000) photo = buf.toString('base64');
+        else result = 'anh_qua_lon';
+      } catch (e) {
+        result = 'tai_anh_loi';
+      }
+    }
+    if (!result) {
+      try {
+        const r = await fetch(`${base()}/api/public/attendance/facepush/${dev.key}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ employee_no: emp, photo }), signal: AbortSignal.timeout(15000) });
+        result = r.ok ? (await r.json()).data.result : 'demogym_loi_' + r.status;
+      } catch (e) {
+        result = 'demogym_loi';
+      }
+    }
+    stat[result] = (stat[result] || 0) + 1;
+    await sleep(250);
+  }
+  log(`${dev.name}: xong. Ket qua:`, JSON.stringify(stat));
+}
+
 async function test() {
   for (const dev of cfg.devices) {
     try {
@@ -177,6 +237,7 @@ function startPoll(dev) {
 }
 
 if (process.argv[2] === 'test') test();
+else if (process.argv[2] === 'pull') (async () => { for (const d of cfg.devices) { try { await pull(d); } catch (e) { log(`${d.name}: ${e.message}`); } } })();
 else {
   log('Cau noi chay (chi doc). Thoat bang Ctrl+C.');
   cfg.devices.forEach(startPoll);

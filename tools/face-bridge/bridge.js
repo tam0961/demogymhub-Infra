@@ -15,6 +15,9 @@ function parseChallenge(h) {
   return o;
 }
 
+process.on('uncaughtException', (e) => log('Loi khong mong doi (van chay tiep):', e && e.message));
+process.on('unhandledRejection', (e) => log('Loi khong mong doi (van chay tiep):', e && e.message));
+
 const authCache = {};
 
 function digestFor(dev, method, uri) {
@@ -266,12 +269,14 @@ function startPoll(dev) {
       for (const e of events) {
         const id = `${e.employeeNoString}|${e.time}|${e.serialNo || ''}`;
         const t = Date.parse(String(e.time).slice(0, 19) + 'Z');
+        if (!seen.has(id)) {
+          // gui loi thi nem ra: luot quet van nam trong cua so, lan hoi sau se gui lai (khong mat luot quet)
+          await push(dev, String(e.employeeNoString).trim());
+          seen.add(id);
+          if (seen.size > 500) seen.delete(seen.values().next().value);
+          log(`${dev.name}: quet ma ${e.employeeNoString} ${e.name || ''}`);
+        }
         if (!Number.isNaN(t) && t - 2000 > startWall) startWall = t - 2000;
-        if (seen.has(id)) continue;
-        seen.add(id);
-        if (seen.size > 500) seen.delete(seen.values().next().value);
-        await push(dev, String(e.employeeNoString).trim());
-        log(`${dev.name}: quet ma ${e.employeeNoString} ${e.name || ''}`);
       }
     } catch (e) {
       log(`${dev.name}: ${e.message}`);
@@ -283,6 +288,9 @@ function startPoll(dev) {
       busy = false;
     }
   };
+  const ping = () => fetch(`${base()}/api/public/attendance/ping/${dev.key}`, { signal: AbortSignal.timeout(8000) }).catch(() => {});
+  ping();
+  setInterval(ping, 20000);
   tick();
   setInterval(tick, every);
 }

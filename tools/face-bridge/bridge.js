@@ -168,7 +168,7 @@ function startJobs(dev) {
     } finally {
       busy = false;
     }
-  }, 6000);
+  }, 2000);
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

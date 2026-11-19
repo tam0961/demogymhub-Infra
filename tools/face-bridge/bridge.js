@@ -242,7 +242,7 @@ async function test() {
 
 function startPoll(dev) {
   const seen = new Set();
-  const every = Math.max(Number(dev.intervalSec) || 2, 2) * 1000;
+  const every = Math.max(Number(dev.intervalSec) || 1, 1) * 1000;
   let skew = null;
   let skewAt = 0;
   let off = '+07:00';

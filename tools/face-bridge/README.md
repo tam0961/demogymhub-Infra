@@ -24,3 +24,11 @@ Dang ky hoac keo anh (`keo-anh.bat`) lau hoac loi cung khong lam cham phan quet.
 
 ## Xem truc tiep camera may cham cong (de chup anh khuon mat)
 Chay trong `chay-dang-ky.bat` (hoac `chay-cau-noi.bat`), mo cong 8898 chi tren may tinh nay (127.0.0.1). Trinh duyet phai mo tren CHINH may tinh dang chay cau noi, dung Chrome hoac Edge, va trang phai la HTTPS hoac http://localhost (WebCodecs chi chay o ngu canh an toan). `allowOrigins` trong config liet ke them dia chi trang duoc phep ket noi (mac dinh chi dia chi `server`). Camera chi de XEM cho dung khung, khong luu hinh.
+
+## May tinh le tan (cai mot lan)
+1. Cai Node.js LTS (nodejs.org).
+2. Chep ca thu muc `face-bridge` (da co `config.json`) sang may le tan, vi du `C:\face-bridge`. `config.json` chua mat khau may cham cong: chep bang USB hoac thu muc noi bo, khong gui qua chat/email.
+3. Bam doi `cai-may-letan.bat`: tao 2 loi tat o thu muc Startup (tu chay khi mo may) va chay thu.
+4. Dung Chrome hoac Edge, mo **http://localhost:8080** (cau noi chuyen tiep sang DemoGym). Dung dia chi nay thay cho dia chi IP de xem duoc camera.
+5. Neu may admin cung dang chay cau noi, TAT cau noi o may admin (dong cua so `chay-quet`, `chay-dang-ky`) de hai may khong cung hoi may cham cong.
+Cong web cuc bo chi nghe 127.0.0.1. Khi DemoGym co HTTPS (Prod), mo thang dia chi HTTPS, khong can cong nay.

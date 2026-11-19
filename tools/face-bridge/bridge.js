@@ -295,4 +295,5 @@ else {
   if (mode === 'all' || mode === 'scan') cfg.devices.forEach(startPoll);
   if (mode === 'all' || mode === 'jobs') cfg.devices.forEach(startJobs);
   if (mode === 'all' || mode === 'jobs' || mode === 'live') require('./live').startLive(cfg, log);
+  if (mode === 'all' || mode === 'jobs' || mode === 'web') require('./web').startWeb(cfg, log);
 }

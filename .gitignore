@@ -1,3 +1,5 @@
 .env
 nginx/certs/
 nginx/origin-ssl.conf
+
+tools/face-bridge/config.json

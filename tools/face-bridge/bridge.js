@@ -56,8 +56,29 @@ async function hik(dev, method, uri, body, raw, timeoutMs) {
     return Buffer.from(await r.arrayBuffer());
   }
   const text = await r.text();
-  if (!r.ok) throw new Error(`May tra ve ${r.status}: ${text.slice(0, 160)}`);
+  const why = deviceWhy(text);
+  if (!r.ok) throw new Error(`May tra ve ${r.status}${why ? ': ' + why : ': ' + text.slice(0, 160)}`);
+  if (why && statusCodeOf(text) !== null && statusCodeOf(text) !== 1) throw new Error(`May tu choi: ${why}`);
   return text;
+}
+
+function statusCodeOf(text) {
+  try {
+    const c = JSON.parse(text).statusCode;
+    return typeof c === 'number' ? c : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Ly do that cua may nam trong statusString / subStatusCode / errorMsg
+function deviceWhy(text) {
+  try {
+    const j = JSON.parse(text);
+    return [j.statusString, j.subStatusCode, j.errorMsg].filter(Boolean).join(' / ');
+  } catch (e) {
+    return '';
+  }
 }
 
 async function deviceNow(dev) {

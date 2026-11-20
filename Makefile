@@ -8,7 +8,7 @@ check-env:
 	@test -f .env || (echo ".env missing: cp .env.example .env" && exit 1)
 
 web:
-	docker run --rm -v "$(CURDIR)/../demogymhub-Frontend:/app" -w /app node:22-alpine sh -c "npm ci && npm run build"
+	docker run --rm -v "$(CURDIR)/../demogymhub-Frontend:/app" -v gymhub-npm-cache:/root/.npm -w /app node:22-alpine sh -c 'H=$$(md5sum package-lock.json | cut -d" " -f1); if [ ! -d node_modules ] || [ "$$(cat node_modules/.lockhash 2>/dev/null)" != "$$H" ]; then npm ci --prefer-offline --no-audit --no-fund && echo $$H > node_modules/.lockhash; fi; npm run build'
 
 dev: check-env web
 	$(DEV) up -d --build

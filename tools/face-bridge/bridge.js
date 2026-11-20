@@ -143,6 +143,8 @@ async function enroll(dev, job) {
   return 'Da dang ky khuon mat len may, ma ' + emp;
 }
 
+const serverPaused = {};
+
 function startJobs(dev) {
   let busy = false;
   let pausedUntil = 0;
@@ -152,7 +154,9 @@ function startJobs(dev) {
     try {
       const r = await fetch(`${base()}/api/public/attendance/jobs/${dev.key}`, { signal: AbortSignal.timeout(8000) });
       if (!r.ok) throw new Error(`DemoGym tra ve ${r.status}`);
-      for (const job of (await r.json()).data) {
+      const jr = await r.json();
+      serverPaused[dev.key] = !!jr.paused;
+      for (const job of jr.data) {
         let ok = true;
         let message;
         try {
@@ -254,6 +258,7 @@ function startPoll(dev) {
   let pausedUntil = 0;
   const tick = async () => {
     if (busy || Date.now() < pausedUntil) return;
+    if (serverPaused[dev.key]) { startWall = null; return; }
     busy = true;
     try {
       if (skew === null || Date.now() - skewAt > 5 * 60 * 1000) {
@@ -288,7 +293,7 @@ function startPoll(dev) {
       busy = false;
     }
   };
-  const ping = () => fetch(`${base()}/api/public/attendance/ping/${dev.key}`, { signal: AbortSignal.timeout(8000) }).catch(() => {});
+  const ping = () => fetch(`${base()}/api/public/attendance/ping/${dev.key}`, { signal: AbortSignal.timeout(8000) }).then((r) => r.json()).then((j) => { serverPaused[dev.key] = !!j.paused; }).catch(() => {});
   ping();
   setInterval(ping, 20000);
   tick();

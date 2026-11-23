@@ -101,6 +101,7 @@ services:
     volumes:
       - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
       - ./nginx/app.inc:/etc/nginx/conf.d/app.inc:ro
+      - ./nginx/booking.inc:/etc/nginx/conf.d/booking.inc:ro
       - ./nginx/certs:/etc/nginx/certs:ro
       - ./nginx/proxy-api.inc:/etc/nginx/conf.d/proxy-api.inc:ro
       - ${FRONTEND_DIST:-../demogymhub-Frontend/apps/admin/dist}:/usr/share/nginx/html:ro

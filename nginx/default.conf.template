@@ -63,3 +63,14 @@ server {
 
   include /etc/nginx/conf.d/app.inc;
 }
+
+# booking.thgym.com serves only the public class booking page. Port 80 works for Cloudflare Flexible or direct tests.
+# For Full or Full (strict), put a Cloudflare Origin certificate on the server as nginx/certs/booking.pem and booking.key,
+# and a nginx/certs/booking-ssl.conf with the matching 443 server block (not kept in git).
+server {
+  listen 80;
+  server_name booking.thgym.com;
+  include /etc/nginx/conf.d/booking.inc;
+}
+
+include /etc/nginx/certs/booking-*.conf;

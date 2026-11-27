@@ -101,7 +101,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "3002:80"
+      - "127.0.0.1:3002:80"
     volumes:
       - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
       - ./nginx/app.inc:/etc/nginx/conf.d/app.inc:ro
